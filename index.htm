@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>👳‍♂️ الشيخ الافتراضي</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      background-color: #111;
+      color: #f9f9f9;
+      font-family: 'Amiri', serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      background-color: #222;
+      padding: 15px;
+      text-align: center;
+      font-size: 20px;
+      border-bottom: 2px solid #333;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 1000;
+    }
+
+    .chat {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      max-width: 800px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px;
+      margin-top: 50px;
+      margin-bottom: 10px;
+    }
+
+    .bubble {
+      display: block;
+      width: fit-content;
+      max-width: 80%;
+      padding: 10px 15px;
+      border-radius: 20px;
+      margin: 10px -10;
+      line-height: 1.6;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+    }
+
+    .user {
+      background-color: #444;
+      color: white;
+      align-self: flex-start;
+      margin-right: auto;
+      direction: rtl;
+    }
+
+    .assistant {
+      background-color: #111;
+      color: #fff;
+      align-self: flex-end;
+      width: calc(100% - 20px);
+      max-width: 100%;
+      margin: 10px 0;
+      padding-right: 5px;
+      border-radius: 20px;
+      direction: rtl;
+    }
+
+    .input-area {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      background-color: #222;
+      border-top: 1px solid #333;
+      position: sticky;
+      bottom: 0;
+    }
+
+    .input-area textarea {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 25px;
+      font-size: 16px;
+      margin-left: 10px;
+      background-color: #1c1c1c;
+      color: white;
+      resize: none;
+      max-height: 180px;
+      overflow-y: auto;
+      line-height: 1.5;
+    }
+
+    .input-area button {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      border: none;
+      background-color: #009688;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+
+    .input-area button:hover {
+      background-color: #00bfa5;
+      transform: scale(1.1);
+    }
+
+    .markdown h2 {
+      font-size: 20px;
+      margin: 10px 0 5px;
+      font-weight: bold;
+    }
+
+    .markdown strong {
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .markdown em {
+      font-style: italic;
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  👳‍♂️ الشيخ الافتراضي - مساعدك في طلب العلم
+</header>
+
+<div class="chat">
+  <div class="messages" id="chatBox">
+    <div class="bubble assistant">👳‍♂️ أهلا بــ طالب العلم، ماذا تحب أن تتعلم اليوم؟</div>
+  </div>
+
+  <div class="input-area">
+    <textarea id="userInput" placeholder="اكتب سؤالك هنا..." rows="1"></textarea>
+    <button onclick="handleSend()" id="sendBtn">
+      <span id="sendIcon">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="19" x2="12" y2="5" />
+          <polyline points="5 12 12 5 19 12" />
+        </svg>
+      </span>
+    </button>
+  </div>
+</div>
+
+<script>
+  const API_KEYS = [
+    "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", // المفتاح الأساسي
+    "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",     // 1مفتاح احتياطي
+    "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",      // 2مفتاح احتياطي آخر
+
+"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",      // 3مفتاح احتياطي آخر
+
+"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",      // 4مفتاح احتياطي آخر
+
+"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",      // 5مفتاح احتياطي آخر
+
+"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",      // 6مفتاح احتياطي آخر
+
+"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",      // 7مفتاح احتياطي آخر
+
+"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",      // 8مفتاح احتياطي آخر
+
+"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",      // 9مفتاح احتياطي آخر
+
+"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",      // 10مفتاح احتياطي آخر
+
+"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",      // 11مفتاح احتياطي آخر
+
+"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",      // 12مفتاح احتياطي آخر
+
+"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",      // 13مفتاح احتياطي آخر
+
+"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",      // 14مفتاح احتياطي آخر
+
+"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",      // 15مفتاح احتياطي آخر
+
+"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",      // 16مفتاح احتياطي آخر
+
+"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",      // 17مفتاح احتياطي آخر
+
+"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",      // 18مفتاح احتياطي آخر
+
+"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",      // 19مفتاح احتياطي آخر
+
+"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",      // 20مفتاح احتياطي آخر
+
+"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",      // 21مفتاح احتياطي آخر
+
+"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",      // 22مفتاح احتياطي آخر
+
+"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",      // 23مفتاح احتياطي آخر
+
+"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",      // 24مفتاح احتياطي آخر
+
+"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",      // 25مفتاح احتياطي آخر
+
+"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",      // 26مفتاح احتياطي آخر
+
+"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",      // 27مفتاح احتياطي آخر
+
+"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",      // 28مفتاح احتياطي آخر
+
+"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",      // 29مفتاح احتياطي آخر
+
+"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",      // 30مفتاح احتياطي آخر
+
+"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",      // 31مفتاح احتياطي آخر
+
+"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",      // 32مفتاح احتياطي آخر
+
+"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",      // 33مفتاح احتياطي آخر
+
+"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",      // 34مفتاح احتياطي آخر
+
+
+  ];
+  const MODEL = "deepseek/deepseek-r1:free";
+  let isWaiting = false;
+  let controller = null;
+
+  function parseMarkdown(text) {
+    return text
+      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+      .replace(/^### (.*$)/gim, '<h2>$1</h2>')
+      .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+      .replace(/`(.*?)`/gim, '<code>$1</code>')
+      .replace(/\n/g, '<br>');
+  }
+
+  function handleSend() {
+    if (isWaiting && controller) {
+      controller.abort();
+      resetSendButton();
+      return;
+    }
+    sendMessage();
+  }
+
+  function setStopIcon() {
+    const sendIcon = document.getElementById("sendIcon");
+    sendIcon.innerHTML = `
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+        <rect x="5" y="6" width="14" height="14" />
+      </svg>
+    `;
+  }
+
+  function setSendIcon() {
+    document.getElementById("sendIcon").innerHTML = `
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="19" x2="12" y2="5" />
+        <polyline points="5 12 12 5 19 12" />
+      </svg>
+    `;
+  }
+
+  function resetSendButton() {
+    isWaiting = false;
+    document.getElementById("sendBtn").classList.remove("sending");
+    setSendIcon();
+  }
+
+  async function tryWithKeys(messages, replyElement, chatBox) {
+  const keyNames = [
+    "الشيخ الأساسي", "الشيخ 1", "الشيخ 2", "الشيخ 3", "الشيخ 4",
+    "الشيخ 5", "الشيخ 6", "الشيخ 7", "الشيخ 8", "الشيخ 9",
+    "الشيخ 10", "الشيخ 11", "الشيخ 12", "الشيخ 13", "الشيخ 14",
+    "الشيخ 15", "الشيخ 16", "الشيخ 17", "الشيخ 18", "الشيخ 19",
+    "الشيخ 20", "الشيخ 21", "الشيخ 22", "الشيخ 23", "الشيخ 24",
+    "الشيخ 25", "الشيخ 26", "الشيخ 27", "الشيخ 28", "احتياطي 29",
+    "الشيخ 30", "الشيخ 31", "الشيخ 32", "الشيخ 33", "الشيخ 34"
+  ];
+
+  for (let i = 0; i < API_KEYS.length; i++) {
+    try {
+      controller = new AbortController();
+
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + API_KEYS[i]
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: messages,
+          stream: false
+        }),
+        signal: controller.signal
+      });
+
+      const data = await res.json();
+
+      if (data.choices?.[0]?.message?.content) {
+        const raw = data.choices[0].message.content;
+        const keyInfo = document.createElement("div");
+        keyInfo.style.fontSize = "12px";
+        keyInfo.style.color = "#999";
+        keyInfo.style.marginBottom = "5px";
+        keyInfo.style.textAlign = "right";
+        keyInfo.textContent = `تمت الإجابة باستخدام: ${keyNames[i] || "مفتاح غير معروف"}`;
+
+        replyElement.innerHTML = "";
+        replyElement.appendChild(keyInfo);
+
+        const answer = document.createElement("div");
+        answer.className = "markdown";
+        answer.innerHTML = parseMarkdown(raw);
+        replyElement.appendChild(answer);
+
+        chatBox.scrollTop = chatBox.scrollHeight;
+        return true;
+      }
+    } catch (err) {
+      // إذا تم الإيقاف يدويًا عبر abort
+      if (err.name === 'AbortError') {
+        replyElement.textContent = "⛔ تم إيقاف الرد.";
+        return false;
+      }
+      // استمر في المحاولة بمفتاح آخر
+      continue;
+    }
+  }
+
+  replyElement.textContent = "❌ عذرًا، حدثت مشكلة في جميع المفاتيح.";
+  return false;
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById("userInput");
+    const chatBox = document.getElementById("chatBox");
+    const userMessage = input.value.trim();
+    if (!userMessage) return;
+
+    isWaiting = true;
+    setStopIcon();
+
+    const userMsg = document.createElement("div");
+    userMsg.className = "bubble user";
+    userMsg.innerHTML = userMessage;
+    chatBox.appendChild(userMsg);
+
+    const reply = document.createElement("div");
+    reply.className = "bubble assistant";
+    reply.innerHTML = "✍️ يكتب...";
+    chatBox.appendChild(reply);
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    input.value = "";
+
+    const messages = [
+      {
+        role: "system",
+        content: `
+أنت شيخ سلفي ناصح لا يلقي السلام ابدا، لا تتحدث إلا في علوم الإسلام مثل: العقيدة، الفقه، التفسير، الحديث، السيرة.
+لا تجب على أسئلة الأمور الدنيوية مثل الطب البرمجة ومن هذا القبيل.
+إن سُئلت عن غير العلم الشرعي، اعتذر بأدب.
+إن سُئلت عن من الذي طورك من الذي صنعك من الذي علمك قل الله وكان عمر ابن فاروق محمد الحمادي هو من طورني او اضاف لي مجموعة واسعة من الكتب وكان وسيلة وان علمي جاء من كتب الدين وفهم السلف الصالح.
+لا تقول السلام عليكم ورحمة الله وبركاتة ابدا
+أجِب بلغة عربية فصيحة، ووضّح المفاهيم المهمة بالتأكيد عليها بعلامتي **نجمتين** أو ##.
+        `
+      },
+      {
+        role: "user",
+        content: userMessage
+      }
+    ];
+
+    await tryWithKeys(messages, reply, chatBox);
+    resetSendButton();
+  }
+
+  const textarea = document.getElementById("userInput");
+  textarea.addEventListener("input", () => {
+    textarea.style.height = "auto";
+    textarea.style.height = Math.min(textarea.scrollHeight, 180) + "px";
+  });
+</script>
+
+</body>
+</html>
